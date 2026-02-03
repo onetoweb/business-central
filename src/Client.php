@@ -5,7 +5,7 @@ namespace Onetoweb\BusinessCentral;
 use GuzzleHttp\RequestOptions;
 use GuzzleHttp\Client as GuzzleCLient;
 use Onetoweb\BusinessCentral\Token;
-use Onetoweb\BusinessCentral\Exception\TokenException;
+use DateTime;
 
 /**
  * Business Central Api Client.
@@ -15,8 +15,8 @@ class Client
     /**
      * Base href
      */
-    public const BASE_HREF = 'https://api.businesscentral.dynamics.com/v2.0/%s/';
-    public const AUTHORIZE_URL = 'https://login.microsoftonline.com/%s/oauth2/v2.0/authorize';
+    public const BASE_HREF = 'https://api.businesscentral.dynamics.com/v2.0/%s';
+    public const TOKEN_URL = 'https://login.microsoftonline.com/%s/oauth2/v2.0/token';
     
     /**
      * Methods.
@@ -62,32 +62,6 @@ class Client
     }
     
     /**
-     * @param string $redirectUri
-     * @param ?string $state = null
-     * 
-     * @return string
-     */
-    public function getAuthorizeUrl(string $redirectUri, ?string $state = null): string
-    {
-        $query = [
-            'client_id' => $this->clientId,
-            'response_type' => 'code',
-            'redirect_uri' => $redirectUri,
-            'response_mode' => 'query',
-            'scope' => 'https://api.businesscentral.dynamics.com/.default',
-        ];
-        
-        if ($state !== null) {
-            
-            $query = array_merge($query, [
-                'state' => $state
-            ]);
-        }
-        
-        return sprintf(self::AUTHORIZE_URL, $this->tenantId).'?'.http_build_query($query);
-    }
-    
-    /**
      * @param Token $token
      * 
      * @return void
@@ -124,6 +98,14 @@ class Client
     }
     
     /**
+     * @return string
+     */
+    public function getTokenUrl(): string
+    {
+        return sprintf(self::TOKEN_URL, $this->tenantId);
+    }
+    
+    /**
      * @param string $endpoint
      * @param array $query = []
      * 
@@ -146,35 +128,36 @@ class Client
     }
     
     /**
-     * @param string $code
-     * 
      * @return void
      */
-    public function requestAccessToken(string $code): void
+    public function requestAccessToken(): void
     {
         // request access token request
+        $options = [
+            RequestOptions::HTTP_ERRORS => false,
+            RequestOptions::FORM_PARAMS => [
+                'grant_type' => 'client_credentials',
+                'client_id' => $this->clientId,
+                'client_secret' => $this->secret,
+                'scope' => 'https://api.businesscentral.dynamics.com/.default',
+            ],
+        ];
         
-        $tokenArray = [];
+        // make request
+        $response = (new GuzzleCLient())->post($this->getTokenUrl(), $options);
         
-        $this->updateToken($tokenArray);
-    }
-    
-    /**
-     * @return void
-     */
-    public function refreshAccessToken(): void
-    {
-        // refresh access token request
-        
-        $tokenArray = [];
+        // decode json
+        $tokenArray = json_decode($response->getBody()->getContents(), true);
         
         $this->updateToken($tokenArray);
     }
     
     /**
      * @param array $tokenArray
+     * 
+     * @return void
      */
-    public function updateToken(array $tokenArray): void
+    private function updateToken(array $tokenArray): void
     {
         // get expires DateTime
         $expires = (new DateTime())
@@ -184,7 +167,6 @@ class Client
         // update token
         $this->token = new Token(
             $tokenArray['access_token'],
-            $tokenArray['refresh_token'],
             $expires
         );
         
@@ -197,18 +179,15 @@ class Client
      * @param array $data = []
      * @param array $query = []
      * 
-     * @throws TokenException if no token was set
-     * 
      * @return array|null
      */
     public function request(string $method, string $endpoint, array $data = [], array $query = []): ?array
     {
-        if ($this->token === null) {
-            throw new TokenException('not token was set use setToken to set a token');
-        }
-        
-        if ($this->token->isExpired()) {
-            $this->refreshAccessToken();
+        if (
+            $this->token === null
+            or $this->token->isExpired()
+        ) {
+            $this->requestAccessToken();
         }
         
         // build options
@@ -217,8 +196,7 @@ class Client
             RequestOptions::HEADERS => [
                 'accept' => 'application/json',
                 'content-type' => 'application/json',
-                'Bearer' => $this->token->getAccessToken(),
-                'Data-Access-Intent' => ($method === self::METHOD_GET) ? 'ReadOnly' : 'ReadWrite',
+                'Authorization' => "Bearer {$this->token->getAccessToken()}",
             ],
             RequestOptions::JSON => $data,
             RequestOptions::QUERY => $query,
@@ -227,8 +205,11 @@ class Client
         // make request
         $response = (new GuzzleCLient())->request($method, $this->getUrl($endpoint), $options);
         
+        // get contents
+        $contents = $response->getBody()->getContents();
+        
         // decode json
-        $json = json_decode($response->getBody()->getContents(), true);
+        $json = json_decode($contents, true);
         
         return $json;
     }

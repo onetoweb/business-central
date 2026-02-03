@@ -13,12 +13,7 @@ class Token
      * @var string
      */
     private $accessToken;
-
-    /**
-     * @var string
-     */
-    private $refreshToken;
-
+    
     /**
      * @var DateTime
      */
@@ -26,13 +21,11 @@ class Token
     
     /**
      * @param string $accessToken
-     * @param string $refreshToken
      * @param DateTime $expires
      */
-    public function __construct(string $accessToken, string $refreshToken, DateTime $expires)
+    public function __construct(string $accessToken, DateTime $expires)
     {
         $this->accessToken = $accessToken;
-        $this->refreshToken = $refreshToken;
         $this->expires = $expires;
     }
     
@@ -42,14 +35,6 @@ class Token
     public function getAccessToken():  string
     {
         return $this->accessToken;
-    }
-    
-    /**
-     * @return string
-     */
-    public function getRefreshToken():  string
-    {
-        return $this->refreshToken;
     }
     
     /**
