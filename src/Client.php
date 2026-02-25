@@ -134,7 +134,6 @@ class Client
     {
         // request access token request
         $options = [
-            RequestOptions::HTTP_ERRORS => false,
             RequestOptions::FORM_PARAMS => [
                 'grant_type' => 'client_credentials',
                 'client_id' => $this->clientId,
@@ -192,7 +191,6 @@ class Client
         
         // build options
         $options = [
-            RequestOptions::HTTP_ERRORS => false,
             RequestOptions::HEADERS => [
                 'accept' => 'application/json',
                 'content-type' => 'application/json',
