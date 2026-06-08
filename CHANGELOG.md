@@ -8,7 +8,6 @@
 
 - Enable http errors
 
-## [1.1.0] - 2026-06-08
+## [1.0.2] - 2026-06-08
 
 - Add response callback
-- Disable http errors

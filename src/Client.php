@@ -211,7 +211,7 @@ class Client
         
         // build options
         $options = [
-            RequestOptions::HTTP_ERRORS => false,
+            RequestOptions::HTTP_ERRORS => true,
             RequestOptions::HEADERS => [
                 'accept' => 'application/json',
                 'content-type' => 'application/json',
