@@ -45,6 +45,11 @@ class Client
     private $updateTokenCallback;
     
     /**
+     * @var callable
+     */
+    private $responseCallback;
+    
+    /**
      * @var Token
      */
     private $token;
@@ -81,10 +86,22 @@ class Client
     
     /**
      * @param callable $updateTokenCallback
+     * 
+     * @return void
      */
-    public function setUpdateTokenCallback(callable $updateTokenCallback)
+    public function setUpdateTokenCallback(callable $updateTokenCallback): void
     {
         $this->updateTokenCallback = $updateTokenCallback;
+    }
+    
+    /**
+     * @param callable $responseCallback
+     * 
+     * @return void
+     */
+    public function setResponseCallback(callable $responseCallback): void
+    {
+        $this->responseCallback = $responseCallback;
     }
     
     /**
@@ -167,9 +184,12 @@ class Client
         $this->token = new Token(
             $tokenArray['access_token'],
             $expires
-        );
+            );
         
-        ($this->updateTokenCallback)($this->token);
+        // call update token callback
+        if ($this->updateTokenCallback) {
+            ($this->updateTokenCallback)($this->token);
+        }
     }
     
     /**
@@ -191,6 +211,7 @@ class Client
         
         // build options
         $options = [
+            RequestOptions::HTTP_ERRORS => false,
             RequestOptions::HEADERS => [
                 'accept' => 'application/json',
                 'content-type' => 'application/json',
@@ -205,6 +226,11 @@ class Client
         
         // get contents
         $contents = $response->getBody()->getContents();
+        
+        // call response callback
+        if ($this->responseCallback) {
+            ($this->responseCallback)($response, $contents);
+        }
         
         // decode json
         $json = json_decode($contents, true);
