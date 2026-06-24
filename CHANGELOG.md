@@ -11,3 +11,7 @@
 ## [1.0.2] - 2026-06-08
 
 - Add response callback
+
+## [1.0.3] - 2026-06-24
+
+- Widen symfony/http-foundation requirements
