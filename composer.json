@@ -16,12 +16,12 @@
         }
     ],
     "require": {
-        "php": ">=7.2.0",
-        "guzzlehttp/guzzle" : "^6.0 || ^7.0",
-        "symfony/http-foundation": "^5.0 || ^6.0 || ^7.0"
+        "php": ">=8.0",
+        "guzzlehttp/guzzle" : "^7.0 || ^8.0",
+        "symfony/http-foundation": "^6.0 || ^7.0 || ^8.0"
     },
     "require-dev": {
-        "symfony/error-handler": "^5.0"
+        "symfony/error-handler": "^8.1"
     },
     "autoload": {
         "psr-4": {

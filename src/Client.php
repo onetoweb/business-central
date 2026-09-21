@@ -4,8 +4,10 @@ namespace Onetoweb\BusinessCentral;
 
 use GuzzleHttp\RequestOptions;
 use GuzzleHttp\Client as GuzzleCLient;
+use Onetoweb\BusinessCentral\Config\Method;
 use Onetoweb\BusinessCentral\Token;
 use DateTime;
+use Closure;
 
 /**
  * Business Central Api Client.
@@ -19,51 +21,37 @@ class Client
     public const TOKEN_URL = 'https://login.microsoftonline.com/%s/oauth2/v2.0/token';
     
     /**
-     * Methods.
+     * @var Closure|null
      */
-    public const METHOD_GET = 'GET';
-    public const METHOD_POST = 'POST';
+    private ?Closure $tokenUpdateCallback = null;
     
     /**
-     * @var string
+     * @var Closure|null
      */
-    private $clientId;
+    private ?Closure $responseCallback = null;
     
     /**
-     * @var string
+     * @var Token|null
      */
-    private $secret;
-    
-    /**
-     * @var string
-     */
-    private $tenantId;
-    
-    /**
-     * @var callable
-     */
-    private $updateTokenCallback;
-    
-    /**
-     * @var callable
-     */
-    private $responseCallback;
-    
-    /**
-     * @var Token
-     */
-    private $token;
+    private ?Token $token = null;
     
     /**
      * @param string $clientId
      * @param string $secret
      * @param string $tenantId
      */
-    public function __construct(string $clientId, string $secret, string $tenantId)
-    {
-        $this->clientId = $clientId;
-        $this->secret = $secret;
-        $this->tenantId = $tenantId;
+    public function __construct(
+        
+        #[\SensitiveParameter]
+        private string $clientId,
+        
+        #[\SensitiveParameter]
+        private string $secret,
+        
+        #[\SensitiveParameter]
+        private string $tenantId
+    ) {
+        
     }
     
     /**
@@ -85,21 +73,21 @@ class Client
     }
     
     /**
-     * @param callable $updateTokenCallback
+     * @param Closure $updateTokenCallback
      * 
      * @return void
      */
-    public function setUpdateTokenCallback(callable $updateTokenCallback): void
+    public function setUpdateTokenCallback(Closure $updateTokenCallback): void
     {
         $this->updateTokenCallback = $updateTokenCallback;
     }
     
     /**
-     * @param callable $responseCallback
+     * @param Closure $responseCallback
      * 
      * @return void
      */
-    public function setResponseCallback(callable $responseCallback): void
+    public function setResponseCallback(Closure $responseCallback): void
     {
         $this->responseCallback = $responseCallback;
     }
@@ -130,7 +118,7 @@ class Client
      */
     public function get(string $endpoint, array $query = []): ?array
     {
-        return $this->request(self::METHOD_GET, $endpoint, [], $query);
+        return $this->request(Method::GET, $endpoint, [], $query);
     }
     
     /**
@@ -141,7 +129,7 @@ class Client
      */
     public function post(string $endpoint, array $data = []): ?array
     {
-        return $this->request(self::METHOD_POST, $endpoint, $data);
+        return $this->request(Method::POST, $endpoint, $data);
     }
     
     /**
@@ -184,7 +172,7 @@ class Client
         $this->token = new Token(
             $tokenArray['access_token'],
             $expires
-            );
+        );
         
         // call update token callback
         if ($this->updateTokenCallback) {
@@ -193,14 +181,14 @@ class Client
     }
     
     /**
-     * @param string $method
+     * @param Method $method
      * @param string $endpoint
      * @param array $data = []
      * @param array $query = []
      * 
      * @return array|null
      */
-    public function request(string $method, string $endpoint, array $data = [], array $query = []): ?array
+    public function request(Method $method, string $endpoint, array $data = [], array $query = []): ?array
     {
         if (
             $this->token === null
@@ -222,7 +210,9 @@ class Client
         ];
         
         // make request
-        $response = (new GuzzleCLient())->request($method, $this->getUrl($endpoint), $options);
+        $response = (new GuzzleCLient())->request($method->value, $this->getUrl($endpoint), $options);
+        
+        dump($response);
         
         // get contents
         $contents = $response->getBody()->getContents();

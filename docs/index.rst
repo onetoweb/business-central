@@ -54,3 +54,9 @@ Setup
         ));
         
     }
+    
+    // (optional) set response callback
+    $client->setResponseCallback(function(\Psr\Http\Message\ResponseInterface $response)  {
+        
+    });
+    
