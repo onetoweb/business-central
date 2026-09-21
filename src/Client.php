@@ -212,8 +212,6 @@ class Client
         // make request
         $response = (new GuzzleCLient())->request($method->value, $this->getUrl($endpoint), $options);
         
-        dump($response);
-        
         // get contents
         $contents = $response->getBody()->getContents();
         
