@@ -16,9 +16,13 @@
 
 - Widen symfony/http-foundation requirements
 
-## [1.1.0] - 2026-09-21
+## [1.1.1] - 2026-09-21
 
  - Require php 8 or higher
  - Drop support for guzzle 6
  - Add support for guzzle 8
  - Add SensitiveParameter attribute
+
+## [1.1.1] - 2026-09-21
+
+ - Retag fix
